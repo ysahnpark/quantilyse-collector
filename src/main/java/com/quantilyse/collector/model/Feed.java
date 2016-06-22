@@ -23,6 +23,11 @@ public class Feed {
 	private Place place;
 	
 	private HashMap<String, String> attributes = new HashMap<String, String>();
+	
+	public Feed(String provider)
+	{
+		this.provider = provider;
+	}
 
 	public String getProvider() {
 		return provider;

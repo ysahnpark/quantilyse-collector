@@ -22,7 +22,7 @@ public class StoreElasticSearchTest {
 		StoreElasticSearch storeEsHandler = new StoreElasticSearch(props);
 		storeEsHandler.init();
 		
-		Feed feed = new Feed();
+		Feed feed = new Feed("test");
 		feed.setCreatedAt(new Date());
 		feed.setId("123");
 		feed.setLang("en");

@@ -1,5 +1,8 @@
 package com.quantilyse.collector.plug;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.quantilyse.collector.handler.Handler;
 import com.quantilyse.collector.handler.HandlerContext;
@@ -15,7 +18,9 @@ import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -31,9 +36,11 @@ import org.slf4j.LoggerFactory;
  * @author ysahn
  *
  */
-public class TwitterPlug
+public class TwitterPlug implements Plug
 {
 	private static final Logger log = LoggerFactory.getLogger(TwitterPlug.class);
+	
+	private ObjectMapper mapper = new ObjectMapper();
 	
 	private Client client; // hosebirdClient;
 	private Properties config;
@@ -50,6 +57,7 @@ public class TwitterPlug
 		this.handler = handler;
 	}
 
+	// @Override
 	public void init() 
 	{
 
@@ -87,15 +95,28 @@ public class TwitterPlug
 		this.client = builder.build();
 	}
 	
+	// @Override
 	public Feed buildFeed(String sourceData)
 	{
-		Feed feed = new Feed();
+		Feed feed = new Feed("twitter");
+		feed.setOriginalData(sourceData);
 		
-		
+		try {
+			Map<String,Object> userData = this.mapper.readValue(sourceData, Map.class);
+			feed.setId(String.valueOf(userData.get("id")));
+			feed.setText((String)userData.get("text"));
+			// TODO: parase date
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			log.warn("Error parsing JSON message.", e);
+		}
+
 		
 		return feed;
 	}
 	
+	// @Override
 	public void run() throws InterruptedException
 	{
 		// Attempts to establish a connection.
@@ -104,13 +125,14 @@ public class TwitterPlug
 	    for (int msgRead = 0; msgRead < 1000; msgRead++)
 	    {
 			String msg = this.msgQueue.take();
-			System.out.println(msg);
+			//System.out.println(msg);
 			Feed feed = this.buildFeed(msg);
 			HandlerContext ctx = new HandlerContext(feed);
 			this.handler.execute(ctx);
 	    }
 	}
 	
+	// @Override
 	public void stop()
 	{
 	    this.client.stop();
