@@ -1,5 +1,6 @@
 package com.quantilyse.collector.plug;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.quantilyse.collector.handler.Handler;
 import com.quantilyse.collector.handler.HandlerContext;
@@ -16,6 +17,7 @@ import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -31,9 +33,11 @@ import org.slf4j.LoggerFactory;
  * @author ysahn
  *
  */
-public class TwitterPlug
+public class TwitterPlug implements Plug
 {
 	private static final Logger log = LoggerFactory.getLogger(TwitterPlug.class);
+	
+	private ObjectMapper mapper = new ObjectMapper();
 	
 	private Client client; // hosebirdClient;
 	private Properties config;
@@ -43,6 +47,9 @@ public class TwitterPlug
 	private BlockingQueue<String> msgQueue = new LinkedBlockingQueue<String>(100000);
 	
 	private BlockingQueue<Event> eventQueue = new LinkedBlockingQueue<Event>(1000);
+	
+	private boolean stop = true;
+	private Thread thread;
 
 	public TwitterPlug(Properties config, Handler handler)
 	{
@@ -50,6 +57,7 @@ public class TwitterPlug
 		this.handler = handler;
 	}
 
+	// @Override
 	public void init() 
 	{
 
@@ -74,7 +82,7 @@ public class TwitterPlug
 		String username = this.config.getProperty("username");
 		String password = this.config.getProperty("password");
 		//Authentication auth = new BasicAuth(username, password);
-		log.info("BadicAuth with " + username + " " + password);
+		//log.info("BasicAuth with " + username + " " + password);
 		
 		ClientBuilder builder = new ClientBuilder()
 				  .name("Hosebird-Client-01")            // optional: mainly for the logs
@@ -87,32 +95,67 @@ public class TwitterPlug
 		this.client = builder.build();
 	}
 	
+	// @Override
 	public Feed buildFeed(String sourceData)
 	{
-		Feed feed = new Feed();
+		Feed feed = new Feed("twitter");
+		feed.setOriginalData(sourceData);
 		
-		
+		try {
+			Map<String,Object> userData = this.mapper.readValue(sourceData, Map.class);
+			feed.setId(String.valueOf(userData.get("id")));
+			feed.setText((String)userData.get("text"));
+			// TODO: parse date
+		} catch (Exception e) {
+			e.printStackTrace();
+			log.warn("Error parsing JSON message.", e);
+		}
 		
 		return feed;
 	}
 	
-	public void run() throws InterruptedException
+	// @Override
+	public void start()
+	{
+		this.stop = false;
+		this.thread = new Thread(this);
+		this.thread.start();
+	}
+	
+	// @Override
+	public void run() 
 	{
 		// Attempts to establish a connection.
 		this.client.connect();
 		// Do whatever needs to be done with messages
-	    for (int msgRead = 0; msgRead < 1000; msgRead++)
+	    while (!this.stop)
 	    {
-			String msg = this.msgQueue.take();
-			System.out.println(msg);
-			Feed feed = this.buildFeed(msg);
-			HandlerContext ctx = new HandlerContext(feed);
-			this.handler.execute(ctx);
+			try {
+				String msg = this.msgQueue.take();
+				//System.out.println(msg);
+				Feed feed = this.buildFeed(msg);
+				HandlerContext ctx = new HandlerContext(feed);
+				this.handler.execute(ctx);
+		    } catch (InterruptedException ie) {
+		    	log.info("Interrupted.");
+			}
 	    }
 	}
 	
+	// @Override
 	public void stop()
 	{
-	    this.client.stop();
+		this.stop = true;
+		this.thread.interrupt();
+		
+		try {
+			this.thread.join();
+			log.warn("Worker thread joined.");
+		} catch (InterruptedException e) {
+			log.warn("Error MsgQueue.take", e);
+		} finally {
+			this.client.stop();
+		}
+		
 	}
 }

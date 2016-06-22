@@ -5,9 +5,13 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import com.quantilyse.collector.handler.CompositeHandler;
-import com.quantilyse.collector.handler.StoreElasticSearch;
+import com.quantilyse.collector.handler.SimpleLoggerHandler;
 import com.quantilyse.collector.plug.TwitterPlug;
+import com.quantilyse.utils.PropertiesUtils;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Properties;
 
 import org.slf4j.Logger;
@@ -34,21 +38,37 @@ public class Bootstrap
 	    Properties props = new Properties();
 	    props.setProperty("terms", "education");
 	    
-	    props.setProperty("consumerKey", "kJsgdgnxImSJPJxSTNn0LY2o3");
-	    props.setProperty("consumerSecret", "zVkZu3sezVCUFFlwLCAdD2SIVFVBOWBpFMVXCrNKMeBRl2Yu06");
-	    props.setProperty("token", "39404624-W9w8LkGMkqmEUdU3ZfW6DbFh4SvjLN9pnRhxmXIJQ");
-	    props.setProperty("secret", "C136wqsaCrSpbo6OcBXLkizTd8gUpmaa4E0Rxz3eha4V3");
+	    Properties env = new Properties();
+	    FileInputStream fileInput;
+		try {
+			fileInput = new FileInputStream(new File(".env"));
+		    env.load(fileInput);
+		    props.putAll(env);
+		} catch (IOException e) {
+			log.warn(".env file not found", e);
+		}
+		
+		Properties plugProps = PropertiesUtils.filterByPrefix(env, "plug.twitter.", true);
+		
+		log.debug("consumerKey: " + plugProps.getProperty("consumerKey"));
+		log.debug("consumerSecret: " + plugProps.getProperty("consumerSecret"));
+		log.debug("token: " + plugProps.getProperty("token"));
+		log.debug("secret: " + plugProps.getProperty("secret"));
 
 	    // @TODO: Use factory
 	    CompositeHandler handler = new CompositeHandler();
-	    handler.addHandler(new StoreElasticSearch(props));
+	    //handler.addHandler(new StoreElasticSearch(props));
+	    handler.addHandler(new SimpleLoggerHandler());
 	    
-	    TwitterPlug twitterPlug = new TwitterPlug(props, handler);
+	    TwitterPlug twitterPlug = new TwitterPlug(plugProps, handler);
 	    twitterPlug.init();
 	    try {
-	    	twitterPlug.run();
+	    	twitterPlug.start();
+	    	// Listen for 5 seconds
+	    	log.info("Waiting for 10 secs ");
+		    Thread.sleep(10*1000);
 	    } catch (Exception e) {
-	    	log.info("Exception ", e);
+	    	log.warn("Exception ", e);
 	    }
 	    twitterPlug.stop();
 	    
