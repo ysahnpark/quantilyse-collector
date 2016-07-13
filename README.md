@@ -37,12 +37,3 @@ The domain name quantiyzer.com was taken so I decided to go the "British" way us
 Young-Suk Ahn Park.
 
 Licensed under MIT license.
-
-https://apps.twitter.com/
-
-./bin/kibana plugin --install elastic/sense 
-
-./bin/kibana
-
-Note: On Mac, localhost does not work. use 127.0.0.1 instead 
-http://127.0.0.1:5601/app/sense
