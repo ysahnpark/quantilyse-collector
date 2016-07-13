@@ -22,7 +22,7 @@ public class Feed {
 	
 	private Place place;
 	
-	private HashMap<String, String> attributes = new HashMap<String, String>();
+	private HashMap<String, Object> attributes = new HashMap<>();
 	
 	public Feed(String provider)
 	{
@@ -93,20 +93,20 @@ public class Feed {
 		this.place = place;
 	}
 
-	public HashMap<String, String> getAttributes() {
+	public HashMap<String, Object> getAttributes() {
 		return attributes;
 	}
 
-	public void setAttributes(HashMap<String, String> attributes) {
+	public void setAttributes(HashMap<String, Object> attributes) {
 		this.attributes = attributes;
 	}
 	
-	public String getAttribute(String key)
+	public Object getAttribute(String key)
 	{
 		return this.attributes.get(key);
 	}
 	
-	public void setAttribute(String key, String value)
+	public void setAttribute(String key, Object value)
 	{
 		this.attributes.put(key, value);
 	}

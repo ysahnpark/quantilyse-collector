@@ -14,28 +14,45 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.quantilyse.collector.model.Feed;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
-public class StoreElasticSearch implements Handler
+public class StoreElasticSearchHandler implements Handler
 {
 	
-	private static final Logger log = LoggerFactory.getLogger(StoreElasticSearch.class);
+	private static final Logger log = LoggerFactory.getLogger(StoreElasticSearchHandler.class);
 	
 	protected Properties props;
 	protected ObjectMapper mapper = new ObjectMapper(); // create once, reuse
 	protected Client client;
 
-	public StoreElasticSearch(Properties props)
+	public StoreElasticSearchHandler(Properties props)
 	{
 		this.props = props;
+		// I am trying to serialize into ISO format but it is throwing NumberFormatException
+		//this.mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+		//this.mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
 	}
-	
-	public void init() throws UnknownHostException
+
+	/**
+	 * Initializes the handler by creating a client instance.
+	 * @throws UnknownHostException
+	 */
+	public synchronized void init(Properties props) throws RuntimeException
 	{
+		if (this.client != null) {
+			return;
+		}
 		String host = this.props.getProperty("host", "localhost");
 		int port = Integer.parseInt(this.props.getProperty("port", "9300"));
-		this.client = TransportClient.builder().build()
-		        .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(host), port));
+
+		log.info("Initializing {host: " + host + ", port:"+port + "}");
+		try {
+			this.client = TransportClient.builder().build()
+			        .addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(host), port));
+		} catch (UnknownHostException e) {
+			new IllegalArgumentException(e);
+		}
 	}
 	
 	public void release()
@@ -54,7 +71,8 @@ public class StoreElasticSearch implements Handler
 	
 
 	@Override
-	public boolean execute(HandlerContext context) {
+	public boolean execute(HandlerContext context)
+	{
 		
 		byte[] json;
 		try {

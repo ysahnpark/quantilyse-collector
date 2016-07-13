@@ -19,8 +19,8 @@ public class StoreElasticSearchTest {
 		String file = getClass().getResource("/testdata/twitter.sample1.json").getFile();
 		
 		Properties props = new Properties();
-		StoreElasticSearch storeEsHandler = new StoreElasticSearch(props);
-		storeEsHandler.init();
+		StoreElasticSearchHandler storeEsHandler = new StoreElasticSearchHandler(props);
+		storeEsHandler.init(new Properties());
 		
 		Feed feed = new Feed("test");
 		feed.setCreatedAt(new Date());
@@ -42,11 +42,8 @@ public class StoreElasticSearchTest {
 		
 		DeleteResponse response = storeEsHandler.getEsClient().prepareDelete("stream", "feed", id)
 		        .get();
-
 		
 		storeEsHandler.release();
-		
-		
 	}
 	
 	

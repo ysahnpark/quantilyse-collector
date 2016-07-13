@@ -1,5 +1,7 @@
 package com.quantilyse.collector.handler;
 
+import java.util.Properties;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +17,16 @@ public class SimpleLoggerHandler implements Handler {
 		Feed feed = context.getFeed();
 		log.debug("Handling feed: [" + feed.getProvider() + ":" + feed.getId() + "] text:" + feed.getText());
 		return false;
+	}
+
+	@Override
+	public void init(Properties props) {
+		// Nothing to do
+	}
+	
+	@Override
+	public void release() {
+		// Nothing to do
 	}
 
 }

@@ -1,6 +1,8 @@
 package com.quantilyse.utils.pool;
 
+import java.util.concurrent.LinkedBlockingDeque;
+
 public class ObjectPool<T> {
 
-	LinkedListDequeue pooledObjects = new LinkedListDequeue<T>
+	LinkedBlockingDeque<T> pooledObjects = new LinkedBlockingDeque<>();
 }

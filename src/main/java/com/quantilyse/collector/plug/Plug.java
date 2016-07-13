@@ -10,22 +10,26 @@ import com.quantilyse.collector.model.Feed;
 public interface Plug extends Runnable {
 
 	/**
-	 * Initializes the plug
+	 * Initializes the plug.
+	 * E.g. Establish DB connection.
 	 */
 	public void init();
 	
 	/**
-	 * Builds the feed object from the source data
+	 * Builds the feed object from the source data.
+	 * This is called by the worker thread each time a feed is received, just before passing to the
+	 * handler.
 	 */
 	public Feed buildFeed(String sourceData);
 	
 	/**
-	 * Start collecting the feed
+	 * Start collecting the feeds.
+	 * Spawns a worker thread for the collection of feeds.
 	 */
 	public void start();
 	
 	/**
-	 * Stop collecting the feed
+	 * Stop collecting the feeds.
 	 */
 	public void stop();
 }

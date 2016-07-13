@@ -32,6 +32,10 @@ public class SimpleSentimentAnalyser {
 		this.config = config;
 	}
 	
+	/**
+	 * Initializes the analyzer by loading the valence file into the memory
+	 * @throws IOException
+	 */
 	public synchronized void init() throws IOException
 	{
 		if (this.initialized) {
@@ -52,11 +56,11 @@ public class SimpleSentimentAnalyser {
         	
         	String[] entryParts = line.split("\\s+");
 
-        	// we do this to skip multi-word phrases, like “can’t stand” and “cashing in”
+        	// Skipping phrases with multiple terms, e.g. “not good”. Just simplification.
         	if( entryParts.length == 2 ){
         		String word = entryParts[0];
         		Integer valence = Integer.parseInt(entryParts[1]);
-        		lexiconEntries.put(word, valence);
+        		this.lexiconEntries.put(word, valence);
         	}
         } 
         //istream.close();
@@ -66,12 +70,12 @@ public class SimpleSentimentAnalyser {
 
 	/**
 	 * Analyse a text for sentiment level: >0 -> positive sentiment, <0 negative sentiment
-	 * @return
+	 * @return a number that represents the sentiment magnitude. 
 	 * @throws IOException 
 	 */
-	public float analyse(String text) throws IOException
+	public double analyse(String text) throws IOException
 	{
-		float sentimentScore = 0;
+		double sentimentScore = 0;
 		if (!this.initialized) {
 			this.init();
 		}
@@ -82,7 +86,7 @@ public class SimpleSentimentAnalyser {
 			if( this.lexiconEntries.containsKey(textToken))
 			{
 				int valence = this.lexiconEntries.get(textToken);
-				sentimentScore = sentimentScore + (float)valence;
+				sentimentScore = sentimentScore + (double)valence;
 			}
 		}
 		
@@ -90,6 +94,11 @@ public class SimpleSentimentAnalyser {
 		return sentimentScore;
 	}
 	
+	/**
+	 * Returns the valence of the given term
+	 * @param term
+	 * @return
+	 */
 	public Integer getValence(String term)
 	{
 		return lexiconEntries.get(term);

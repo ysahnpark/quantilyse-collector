@@ -6,17 +6,39 @@ import java.util.Properties;
 import org.junit.Test;
 
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
 
 public class SimpleSentimentAnalyserTest {
+	
+	SimpleSentimentAnalyser analyzer;
 
-	@Test
-	public void testInit() throws IOException
+	@Before
+	public void setup() throws IOException
 	{
 		Properties config = new Properties();
-		SimpleSentimentAnalyser sentAnal = new SimpleSentimentAnalyser(config);
+		this.analyzer = new SimpleSentimentAnalyser(config);
 		
-		sentAnal.init();
+		analyzer.init();
 		
-		Assert.assertEquals("Valence not found", new Integer(2), sentAnal.getValence("ability"));
+		Assert.assertEquals("Valence not found", new Integer(2), analyzer.getValence("ability"));
+	}
+	
+	@Test
+	public void testPositive() throws IOException
+	{
+		double valence = this.analyzer.analyse("I love java. It is a great language");
+		
+		double expected = 6;
+		Assert.assertEquals(expected, valence, 0.01);
+	}
+	
+	@Test
+	public void testNegative() throws IOException
+	{
+		double valence = this.analyzer.analyse("I hate to say but sometimes life is hard");
+		
+		double expected = -4;
+		Assert.assertEquals(expected, valence, 0.01);
 	}
 }

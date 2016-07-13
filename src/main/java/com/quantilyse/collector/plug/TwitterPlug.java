@@ -16,7 +16,11 @@ import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
@@ -43,7 +47,7 @@ public class TwitterPlug implements Plug
 	private Properties config;
 	private Handler handler;
 	
-	/** Set up your blocking queues: Be sure to size these properly based on expected TPS of your stream */
+	/** Blocking queues: Be sure to size these properly based on expected TPS of your stream */
 	private BlockingQueue<String> msgQueue = new LinkedBlockingQueue<String>(100000);
 	
 	private BlockingQueue<Event> eventQueue = new LinkedBlockingQueue<Event>(1000);
@@ -105,7 +109,10 @@ public class TwitterPlug implements Plug
 			Map<String,Object> userData = this.mapper.readValue(sourceData, Map.class);
 			feed.setId(String.valueOf(userData.get("id")));
 			feed.setText((String)userData.get("text"));
-			// TODO: parse date
+			feed.setCreatedAt(this.parseTwitterDate((String)userData.get("created_at")));
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+			// This will allow ElasticSearck/Kibana to visualize chronologically
+			feed.setAttribute("created_at_iso", sdf.format(feed.getCreatedAt()));
 		} catch (Exception e) {
 			e.printStackTrace();
 			log.warn("Error parsing JSON message.", e);
@@ -118,6 +125,8 @@ public class TwitterPlug implements Plug
 	public void start()
 	{
 		this.stop = false;
+		// TODO use concurrent.ExecutorService
+		// e.g.ExecutorService executor = Executors.newSingleThreadExecutor();
 		this.thread = new Thread(this);
 		this.thread.start();
 	}
@@ -156,6 +165,13 @@ public class TwitterPlug implements Plug
 		} finally {
 			this.client.stop();
 		}
-		
+	}
+	
+	public static Date parseTwitterDate(String date) throws ParseException
+	{	
+		final String TWITTER="EEE MMM dd HH:mm:ss ZZZZZ yyyy";
+		SimpleDateFormat sf = new SimpleDateFormat(TWITTER, Locale.ENGLISH);
+		sf.setLenient(true);
+		return sf.parse(date);
 	}
 }

@@ -5,7 +5,9 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import com.quantilyse.collector.handler.CompositeHandler;
+import com.quantilyse.collector.handler.SentimentAnalysisHandler;
 import com.quantilyse.collector.handler.SimpleLoggerHandler;
+import com.quantilyse.collector.handler.StoreElasticSearchHandler;
 import com.quantilyse.collector.plug.TwitterPlug;
 import com.quantilyse.utils.PropertiesUtils;
 
@@ -57,20 +59,25 @@ public class Bootstrap
 
 	    // @TODO: Use factory
 	    CompositeHandler handler = new CompositeHandler();
-	    //handler.addHandler(new StoreElasticSearch(props));
-	    handler.addHandler(new SimpleLoggerHandler());
+	    handler.addHandler(new SentimentAnalysisHandler());
+	    handler.addHandler(new StoreElasticSearchHandler(props));
+	    //handler.addHandler(new SimpleLoggerHandler());
+	    // TODO: provide proper
+	    Properties handlerProps = PropertiesUtils.filterByPrefix(env, "handler.", true);
+	    handler.init(handlerProps);
 	    
 	    TwitterPlug twitterPlug = new TwitterPlug(plugProps, handler);
 	    twitterPlug.init();
 	    try {
 	    	twitterPlug.start();
-	    	// Listen for 5 seconds
-	    	log.info("Waiting for 10 secs ");
-		    Thread.sleep(10*1000);
+	    	// Testing pupose: Listen for 5 seconds
+	    	// log.info("Waiting for 10 secs ");
+		    //Thread.sleep(10*1000);
 	    } catch (Exception e) {
 	    	log.warn("Exception ", e);
 	    }
-	    twitterPlug.stop();
+	    // TODO: Graceful shutdownt - release all the resources (Handlers);
+	    //twitterPlug.stop();
 	    
 	}
 }

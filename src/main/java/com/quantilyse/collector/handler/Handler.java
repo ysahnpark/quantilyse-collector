@@ -1,5 +1,7 @@
 package com.quantilyse.collector.handler;
 
+import java.util.Properties;
+
 import com.quantilyse.collector.model.Feed;
 
 /**
@@ -23,5 +25,13 @@ public interface Handler {
 	 */
 	public boolean execute(HandlerContext context);
 	
+	/**
+	 * Releases any resources allocated
+	 */
+	public void init(Properties props) throws RuntimeException;
 	
+	/**
+	 * Releases any resources allocated
+	 */
+	public void release();
 }
